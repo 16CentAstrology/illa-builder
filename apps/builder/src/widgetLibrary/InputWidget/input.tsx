@@ -1,7 +1,8 @@
+import { debounce } from "lodash-es"
 import { FC, forwardRef, useCallback, useEffect, useRef, useState } from "react"
-import { Input } from "@illa-design/react"
+import { Input, Password, Search } from "@illa-design/react"
+import { AutoHeightContainer } from "@/widgetLibrary/PublicSector/AutoHeightContainer"
 import { InvalidMessage } from "@/widgetLibrary/PublicSector/InvalidMessage"
-import { handleValidateCheck } from "@/widgetLibrary/PublicSector/InvalidMessage/utils"
 import { Label } from "@/widgetLibrary/PublicSector/Label"
 import { TooltipWrapper } from "@/widgetLibrary/PublicSector/TooltipWrapper"
 import {
@@ -9,68 +10,98 @@ import {
   applyValidateMessageWrapperStyle,
 } from "@/widgetLibrary/PublicSector/TransformWidgetWrapper/style"
 import { InputWidgetProps, WrappedInputProps } from "./interface"
+import { getValidateMessageFunc } from "./utils"
 
 export const WrappedInput = forwardRef<HTMLInputElement, WrappedInputProps>(
   (props, ref) => {
     const {
-      displayName,
+      type = "input",
+      showVisibleButton = true,
       value,
       placeholder,
       disabled,
       readOnly,
-      prefixIcon,
       prefixText,
-      suffixIcon,
       suffixText,
       showCharacterCount,
       colorScheme,
-      handleUpdateDsl,
       handleOnChange,
+      handleOnFocus,
+      handleOnBlur,
       allowClear,
       maxLength,
       minLength,
-      handleUpdateMultiExecutionResult,
-      getValidateMessage,
+      clearValue,
     } = props
 
     return (
-      <Input
-        w="100%"
-        inputRef={ref}
-        value={value}
-        placeholder={placeholder}
-        disabled={disabled}
-        readOnly={readOnly}
-        prefix={prefixIcon}
-        addonBefore={{ render: prefixText, custom: false }}
-        suffix={suffixIcon}
-        addonAfter={{ render: suffixText, custom: false }}
-        onChange={(value) => {
-          new Promise((resolve) => {
-            const message = getValidateMessage(value)
-            handleUpdateMultiExecutionResult([
-              {
-                displayName,
-                value: {
-                  value: value || "",
-                  validateMessage: message,
-                },
-              },
-            ])
-            resolve(true)
-          }).then(() => {
-            handleOnChange?.()
-          })
-        }}
-        showCount={showCharacterCount}
-        borderColor={colorScheme}
-        allowClear={allowClear}
-        onClear={() => {
-          handleUpdateDsl({ value: "" })
-        }}
-        maxLength={maxLength}
-        minLength={minLength}
-      />
+      <>
+        {type === "input" && (
+          <Input
+            w="100%"
+            inputRef={ref}
+            value={value}
+            placeholder={placeholder}
+            disabled={disabled}
+            readOnly={readOnly}
+            addBefore={prefixText}
+            addAfter={suffixText}
+            onFocus={handleOnFocus}
+            onBlur={handleOnBlur}
+            onChange={handleOnChange}
+            showWordLimit={showCharacterCount}
+            colorScheme={colorScheme}
+            allowClear={allowClear}
+            onClear={clearValue}
+            maxLength={maxLength}
+            minLength={minLength}
+          />
+        )}
+        {type === "password" && (
+          <Password
+            w="100%"
+            inputRef={ref}
+            value={value}
+            autoComplete="new-password"
+            visibilityToggle={showVisibleButton}
+            placeholder={placeholder}
+            disabled={disabled}
+            readOnly={readOnly}
+            addBefore={prefixText}
+            addAfter={suffixText}
+            onFocus={handleOnFocus}
+            onBlur={handleOnBlur}
+            onChange={handleOnChange}
+            showWordLimit={showCharacterCount}
+            colorScheme={colorScheme}
+            allowClear={allowClear}
+            onClear={clearValue}
+            maxLength={maxLength}
+            minLength={minLength}
+          />
+        )}
+        {type === "search" && (
+          <Search
+            w="100%"
+            inputRef={ref}
+            value={value}
+            placeholder={placeholder}
+            disabled={disabled}
+            readOnly={readOnly}
+            addBefore={prefixText}
+            addAfter={suffixText}
+            onFocus={handleOnFocus}
+            onBlur={handleOnBlur}
+            onChange={handleOnChange}
+            showWordLimit={showCharacterCount}
+            colorScheme={colorScheme}
+            allowClear={allowClear}
+            onClear={clearValue}
+            maxLength={maxLength}
+            minLength={minLength}
+          />
+        )}
+      </>
     )
   },
 )
@@ -78,21 +109,9 @@ WrappedInput.displayName = "WrappedInput"
 
 export const InputWidget: FC<InputWidgetProps> = (props) => {
   const {
-    value,
-    placeholder,
-    disabled,
-    readOnly,
-    prefixIcon,
-    prefixText,
-    suffixIcon,
-    suffixText,
-    showCharacterCount,
-    colorScheme,
     displayName,
+    value,
     handleUpdateDsl,
-    handleUpdateGlobalData,
-    handleDeleteGlobalData,
-    allowClear,
     minLength,
     maxLength,
     labelPosition,
@@ -109,39 +128,53 @@ export const InputWidget: FC<InputWidgetProps> = (props) => {
     regex,
     customRule,
     hideValidationMessage,
+    defaultValue,
     updateComponentHeight,
     validateMessage,
+    triggerEventHandler,
+    updateComponentRuntimeProps,
+    deleteComponentRuntimeProps,
+    handleUpdateMultiExecutionResult,
   } = props
 
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const inputWrapperRef = useRef<HTMLDivElement>(null)
+  const [inputValue, setInputValue] = useState<string>(
+    value || defaultValue || "",
+  )
 
   useEffect(() => {
-    if (inputWrapperRef.current) {
-      updateComponentHeight(inputWrapperRef.current?.clientHeight)
-    }
-  }, [validateMessage, labelPosition, updateComponentHeight])
+    setInputValue(defaultValue)
 
-  const getValidateMessage = useCallback(
-    (value) => {
-      if (!hideValidationMessage) {
-        const message = handleValidateCheck({
-          value,
-          pattern,
-          regex,
-          minLength,
-          maxLength,
-          required,
-          customRule,
-        })
-        const showMessage = message && message.length > 0
-        return showMessage ? message : ""
-      }
-      return ""
+    handleUpdateMultiExecutionResult([
+      {
+        displayName,
+        value: {
+          value: defaultValue || "",
+        },
+      },
+    ])
+  }, [defaultValue, displayName, handleUpdateMultiExecutionResult])
+
+  const handleValidate = useCallback(
+    (value?: string) => {
+      const message = getValidateMessageFunc(value, {
+        hideValidationMessage: hideValidationMessage,
+        pattern: pattern,
+        regex: regex,
+        minLength: minLength,
+        maxLength: maxLength,
+        required: required,
+        customRule: customRule,
+      })
+      handleUpdateDsl({
+        validateMessage: message,
+      })
+      return message
     },
     [
       customRule,
+      handleUpdateDsl,
       hideValidationMessage,
       maxLength,
       minLength,
@@ -151,39 +184,82 @@ export const InputWidget: FC<InputWidgetProps> = (props) => {
     ],
   )
 
-  const handleValidate = useCallback(
-    (value?: string) => {
-      const message = getValidateMessage(value)
-      handleUpdateDsl({
-        validateMessage: message,
-      })
-      return message
-    },
-    [getValidateMessage, handleUpdateDsl],
+  const debounceOnChange = useRef(
+    debounce(
+      (
+        value: string,
+        triggerEventHandler: InputWidgetProps["triggerEventHandler"],
+        options?: {
+          hideValidationMessage?: InputWidgetProps["hideValidationMessage"]
+          pattern?: InputWidgetProps["pattern"]
+          regex?: InputWidgetProps["regex"]
+          minLength?: InputWidgetProps["minLength"]
+          maxLength?: InputWidgetProps["maxLength"]
+          required?: InputWidgetProps["required"]
+          customRule?: InputWidgetProps["customRule"]
+        },
+      ) => {
+        new Promise((resolve) => {
+          const message = getValidateMessageFunc(value, options)
+          handleUpdateMultiExecutionResult([
+            {
+              displayName,
+              value: {
+                value: value || "",
+                validateMessage: message,
+              },
+            },
+          ])
+          resolve(true)
+        }).then(() => {
+          triggerEventHandler("change")
+        })
+      },
+      180,
+    ),
   )
-  useEffect(() => {
-    handleUpdateGlobalData?.(displayName, {
-      value,
-      placeholder,
-      disabled,
-      readOnly,
-      prefixIcon,
-      prefixText,
-      suffixIcon,
-      suffixText,
-      showCharacterCount,
-      colorScheme,
-      allowClear,
-      minLength,
+
+  const handleOnChange = useCallback(
+    (value: string) => {
+      setInputValue(value)
+      debounceOnChange.current(value, triggerEventHandler, {
+        hideValidationMessage: hideValidationMessage,
+        pattern: pattern,
+        regex: regex,
+        minLength: minLength,
+        maxLength: maxLength,
+        required: required,
+        customRule: customRule,
+      })
+    },
+    [
+      customRule,
+      hideValidationMessage,
       maxLength,
+      minLength,
+      pattern,
+      regex,
+      required,
+      triggerEventHandler,
+    ],
+  )
+
+  const clearValue = useCallback(() => {
+    handleOnChange("")
+  }, [handleOnChange])
+
+  useEffect(() => {
+    updateComponentRuntimeProps({
       focus: () => {
         inputRef.current?.focus()
       },
       setValue: (value: boolean | string | number | void) => {
-        handleUpdateDsl({ value })
+        if (typeof value === "string") {
+          handleOnChange(value)
+        }
       },
       clearValue: () => {
-        handleUpdateDsl({ value: undefined })
+        clearValue()
       },
       validate: () => {
         return handleValidate(value)
@@ -194,31 +270,30 @@ export const InputWidget: FC<InputWidgetProps> = (props) => {
         })
       },
     })
+
     return () => {
-      handleDeleteGlobalData(displayName)
+      deleteComponentRuntimeProps()
     }
   }, [
-    value,
-    placeholder,
-    disabled,
-    readOnly,
-    prefixIcon,
-    prefixText,
-    suffixIcon,
-    suffixText,
-    showCharacterCount,
-    colorScheme,
-    displayName,
-    allowClear,
-    minLength,
-    maxLength,
-    handleUpdateGlobalData,
+    clearValue,
+    deleteComponentRuntimeProps,
+    handleOnChange,
     handleUpdateDsl,
-    handleDeleteGlobalData,
     handleValidate,
+    updateComponentRuntimeProps,
+    value,
   ])
+
+  const handleOnFocus = useCallback(() => {
+    triggerEventHandler("focus")
+  }, [triggerEventHandler])
+
+  const handleOnBlur = useCallback(() => {
+    triggerEventHandler("blur")
+  }, [triggerEventHandler])
+
   return (
-    <div ref={inputWrapperRef}>
+    <AutoHeightContainer updateComponentHeight={updateComponentHeight}>
       <TooltipWrapper tooltipText={tooltipText} tooltipDisabled={!tooltipText}>
         <div css={applyLabelAndComponentWrapperStyle(labelPosition)}>
           <Label
@@ -235,23 +310,30 @@ export const InputWidget: FC<InputWidgetProps> = (props) => {
           />
           <WrappedInput
             {...props}
+            value={inputValue}
             ref={inputRef}
-            getValidateMessage={getValidateMessage}
+            handleOnChange={handleOnChange}
+            handleOnFocus={handleOnFocus}
+            handleOnBlur={handleOnBlur}
+            clearValue={clearValue}
           />
         </div>
       </TooltipWrapper>
 
-      <div
-        css={applyValidateMessageWrapperStyle(
-          labelWidth,
-          labelPosition,
-          labelHidden || !label,
-        )}
-      >
-        <InvalidMessage validateMessage={validateMessage} />
-      </div>
-    </div>
+      {!hideValidationMessage && (
+        <div
+          css={applyValidateMessageWrapperStyle(
+            labelWidth,
+            labelPosition,
+            labelHidden || !label,
+          )}
+        >
+          <InvalidMessage validateMessage={validateMessage} />
+        </div>
+      )}
+    </AutoHeightContainer>
   )
 }
 
 InputWidget.displayName = "InputWidget"
+export default InputWidget

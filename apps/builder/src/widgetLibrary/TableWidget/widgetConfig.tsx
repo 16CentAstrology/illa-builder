@@ -1,4 +1,4 @@
-import { ReactComponent as TableWidgetIcon } from "@/assets/widgetCover/table.svg"
+import TableWidgetIcon from "@/assets/widgetCover/table.svg?react"
 import i18n from "@/i18n/config"
 import { tansTableDataToColumns } from "@/widgetLibrary/TableWidget/utils"
 import { WidgetConfig } from "@/widgetLibrary/interface"
@@ -30,11 +30,12 @@ export const TABLE_WIDGET_CONFIG: WidgetConfig = {
   displayName: "table",
   widgetName: i18n.t("widget.table.name"),
   h: 40,
-  w: 32,
+  w: 16,
   type: "TABLE_WIDGET",
   icon: <TableWidgetIcon />,
   keywords: ["Table", "表格"],
   sessionType: "DATA",
+  version: 0,
   defaults: initTableWidgetDefaultProps(),
 }
 
@@ -43,10 +44,14 @@ export function initTableWidgetDefaultProps() {
     dataSourceMode: "dynamic",
     dataSourceJS: `{{${JSON.stringify(originData, null, "  ")}}}`,
     columns: tansTableDataToColumns(originData),
+    defaultSortKey: "default",
+    defaultSortOrder: "ascend",
     emptyState: "No rows found",
     overFlow: "pagination",
     download: false,
     filter: false,
     pageSize: `{{10}}`,
+    pageIndex: 0,
+    paginationOffset: 0,
   }
 }

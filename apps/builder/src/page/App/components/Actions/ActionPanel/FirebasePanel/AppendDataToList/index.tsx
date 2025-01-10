@@ -1,15 +1,14 @@
+import { FirebaseSetData } from "@illa-public/public-types"
 import { FC } from "react"
 import { useTranslation } from "react-i18next"
 import { FirebaseActionPartProps } from "@/page/App/components/Actions/ActionPanel/FirebasePanel/intreface"
-import { InputEditor } from "@/page/App/components/InputEditor"
-import { SetData } from "@/redux/currentApp/action/firebaseAction"
+import { InputEditor } from "@/page/App/components/Actions/InputEditor"
 import { VALIDATION_TYPES } from "@/utils/validationFactory"
 
 export const AppendDataToListPart: FC<FirebaseActionPartProps> = (props) => {
   const { t } = useTranslation()
   const { handleValueChange } = props
-  const options = props.options as SetData
-
+  const options = props.options as FirebaseSetData
   return (
     <>
       <InputEditor
@@ -22,7 +21,7 @@ export const AppendDataToListPart: FC<FirebaseActionPartProps> = (props) => {
         title={t("editor.action.panel.firebase.object_to_set")}
         value={options.object}
         onChange={(value) => handleValueChange(value, "object")}
-        expectedType={VALIDATION_TYPES.STRING}
+        expectedType={VALIDATION_TYPES.OBJECT}
       />
     </>
   )

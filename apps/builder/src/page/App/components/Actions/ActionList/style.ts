@@ -1,12 +1,12 @@
 import { css } from "@emotion/react"
-import { globalColor, illaPrefix } from "@illa-design/react"
+import { getColor, globalColor, illaPrefix } from "@illa-design/react"
 
 export const searchHeaderContainerStyle = css`
   width: 255px;
   min-width: 255px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid ${globalColor(`--${illaPrefix}-grayBlue-08`)};
+  border-right: 1px solid ${getColor("grayBlue", "08")};
 `
 
 export const addNewActionButtonStyle = css`
@@ -32,4 +32,35 @@ export const actionListEmptyStyle = css`
   color: ${globalColor(`--${illaPrefix}-grayBlue-04`)};
   border-radius: 4px;
   border: dashed 1px ${globalColor(`--${illaPrefix}-grayBlue-08`)};
+`
+
+export const createDropListItemContainerStyle = css`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`
+
+export const prefixIconContainerStyle = css`
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`
+
+export const dropListWithUpgradeIconStyle = css`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`
+
+export const upgradeContainerStyle = css`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: ${getColor("techPurple", "03")};
+  font-size: 12px;
+  font-style: normal;
+  line-height: 20px;
 `

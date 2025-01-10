@@ -7,6 +7,7 @@ export const editorContainerStyle = css`
   flex-direction: column;
   height: 100vh;
   width: 100vw;
+  position: relative;
 `
 
 export const contentStyle = css`
@@ -38,10 +39,11 @@ export const leftPanelStyle = css`
   width: ${LEFT_PANEL_WIDTH}px;
   height: 100%;
   min-width: ${LEFT_PANEL_WIDTH}px;
-  overflow: auto;
+  overflow: hidden;
   box-sizing: border-box;
   border-right: 1px solid ${globalColor(`--${illaPrefix}-grayBlue-08`)};
   background: ${globalColor(`--${illaPrefix}-white-01`)};
+  padding-bottom: 48px;
 `
 
 export const centerPanelStyle = css`

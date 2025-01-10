@@ -1,9 +1,13 @@
+import { FirebaseCollectionType } from "@illa-public/public-types"
 import { FC, useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useSelector } from "react-redux"
 import { Select } from "@illa-design/react"
-import { Api } from "@/api/base"
 import { CodeEditor } from "@/components/CodeEditor"
+import {
+  CODE_LANG,
+  CODE_TYPE,
+} from "@/components/CodeEditor/CodeMirror/extensions/interface"
 import { CollectionInputProps } from "@/page/App/components/Actions/ActionPanel/FirebasePanel/components/CollectionInput/interface"
 import {
   actionBodyTypeStyle,
@@ -12,48 +16,36 @@ import {
   actionItemStyle,
 } from "@/page/App/components/Actions/ActionPanel/FirebasePanel/style"
 import { getCachedAction } from "@/redux/config/configSelector"
-import {
-  CollectionType,
-  FirebaseServiceType,
-} from "@/redux/currentApp/action/firebaseAction"
-import { ResourcesData } from "@/redux/resource/resourceState"
+import { fetchResourceMeta } from "@/services/resource"
 import { VALIDATION_TYPES } from "@/utils/validationFactory"
 
 export const CollectionInput: FC<CollectionInputProps> = (props) => {
   const { t } = useTranslation()
   const { handleValueChange, collectionType, value } = props
-  const isDropdown = collectionType === CollectionType.DROPDOWN
+  const isDropdown = collectionType === FirebaseCollectionType.DROPDOWN
   const action = useSelector(getCachedAction)!
 
   const [collectionSelect, setCollectionSelect] = useState<string[]>([])
 
   const handleCollectionTypeChange = useCallback(() => {
     const contentType = isDropdown
-      ? CollectionType.RAW
-      : CollectionType.DROPDOWN
+      ? FirebaseCollectionType.RAW
+      : FirebaseCollectionType.DROPDOWN
     handleValueChange(contentType, "collectionType")
   }, [handleValueChange, isDropdown])
 
   const handleChange = (value: string) => handleValueChange(value, "collection")
 
   useEffect(() => {
-    Api.request(
-      {
-        url: `resources/${action.resourceId}/meta`,
-        method: "GET",
-      },
-      ({ data }: { data: ResourcesData }) => {
-        let tables: string[] = []
-        if (data.schema) {
-          tables = (data.schema.collections || []) as string[]
-        }
-        setCollectionSelect(tables)
-      },
-      () => {},
-      () => {},
-      () => {},
-    )
-  }, [action.resourceId])
+    if (action.resourceID == undefined) return
+    fetchResourceMeta(action.resourceID).then(({ data }) => {
+      let tables: string[] = []
+      if (data.Schema) {
+        tables = (data.Schema.collections || []) as string[]
+      }
+      setCollectionSelect(tables)
+    })
+  }, [action.resourceID])
 
   return (
     <div css={actionItemStyle}>
@@ -72,24 +64,30 @@ export const CollectionInput: FC<CollectionInputProps> = (props) => {
           defaultValue={value}
           value={value}
           ml="16px"
-          width="100%"
+          w="100%"
           placeholder={t(
             "editor.action.panel.firebase.placeholder.select_collection",
           )}
-          onChange={handleChange}
+          onChange={(v) => {
+            handleChange(v as string)
+          }}
           options={collectionSelect}
         />
       ) : (
-        <CodeEditor
-          css={actionItemCodeEditorStyle}
-          mode="TEXT_JS"
-          value={value}
-          onChange={handleChange}
-          placeholder={t(
-            "editor.action.panel.firebase.placeholder.input_collection",
-          )}
-          expectedType={VALIDATION_TYPES.STRING}
-        />
+        <div css={actionItemCodeEditorStyle}>
+          <CodeEditor
+            value={value}
+            singleLine
+            onChange={handleChange}
+            expectValueType={VALIDATION_TYPES.STRING}
+            lang={CODE_LANG.JAVASCRIPT}
+            codeType={CODE_TYPE.EXPRESSION}
+            canShowCompleteInfo
+            placeholder={t(
+              "editor.action.panel.firebase.placeholder.input_collection",
+            )}
+          />
+        </div>
       )}
     </div>
   )
